@@ -3,24 +3,24 @@ import time
 
 import gpt3_light as gpt3
 
-def do(pythonTwitter):
+def do(babyMonitor):
   infanticizer = gpt3.Infanticizer()
 
-  statuses = pythonTwitter.read_stream()
+  statuses = babyMonitor.read_stream()
   for s in statuses:
     tweet = infanticizer.process(s)
     if not tweet:
       print("No valid tweet, skipping ", s)
       continue
 
-    pythonTwitter.tweet(tweet)
+    babyMonitor.tweet(tweet)
 
-pythonTwitter = babytrump.PythonTwitter()
+babyMonitor = babytrump.TwitterBabyMonitor()
 errorCount = 0
 
 while True:
   try:
-    do(pythonTwitter)
+    do(babyMonitor)
     time.sleep(60)
   except KeyboardInterrupt:
     print("Safely quitting")
