@@ -1,0 +1,4 @@
+venv
+*.pyc
+.env
+last_seen_tweet_id.txt
