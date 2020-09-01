@@ -68,6 +68,11 @@ def test_elmer_fudd():
     'year',
     None)
 
+  # Don't touch URLs
+  assert_converts(gpt3.ElmerFudd(),
+    'hello http://hello/',
+    'hewwo http://hello/')
+
   # This isn't handled yet - should be polls? but doesn't work with the '?' at end
   assert_converts(gpt3.ElmerFudd(),
     'polls?',

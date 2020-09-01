@@ -14,10 +14,10 @@ class Converter(abc.ABC):
 
   @classmethod
   def run_on_modifiable_tokens(self, tweet, func):
-    """ Run func on each non-@user, non-@tag token. Not very smart yet. """
+    """ Run func on each non-@user, non-@tag, non-URL token. Not very smart yet. """
     newtweetTokens = []
     for token in tweet.split():
-      if token.startswith('#') or token.startswith('@'):
+      if token.startswith('#') or token.startswith('@') or token.startswith('http'):
         newtweetTokens.append(token)
       else:
         newtweetTokens.append(func(token))
