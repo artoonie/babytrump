@@ -13,7 +13,7 @@ class TwitterBabyMonitor():
                      consumer_secret=os.environ['API_SECRET_KEY'],
                      access_token_key=os.environ['ACCESS_TOKEN'],
                      access_token_secret=os.environ['ACCESS_TOKEN_SECRET'],
-                     sleep_on_rate_limit=True,
+                     sleep_on_rate_limit=False, # Let it fail - AWS Lambda will take care of it
                      tweet_mode='extended')
     return api
 
