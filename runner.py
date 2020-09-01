@@ -4,10 +4,10 @@ import traceback
 
 import gpt3_light as gpt3
 
-def run_now(baby_monitor, only_last_minute):
+def run_now(baby_monitor):
   infanticizer = gpt3.Infanticizer()
 
-  statuses = baby_monitor.read_stream(only_last_minute)
+  statuses = baby_monitor.read_stream()
   for s in statuses:
     print()
     tweet = infanticizer.process(s)
@@ -24,7 +24,7 @@ def run_continuously():
   
   while True:
     try:
-      run_now(baby_monitor, only_last_minute=False)
+      run_now(baby_monitor)
       time.sleep(60)
     except KeyboardInterrupt:
       print("Safely quitting")
@@ -39,4 +39,4 @@ def run_continuously():
 
 def run_once():
   baby_monitor = babytrump.TwitterBabyMonitor()
-  run_now(baby_monitor, True)
+  run_now(baby_monitor)

@@ -6,4 +6,4 @@ import runner
 
 def lambda_handler():
   babyMonitor = babytrump.TwitterBabyMonitor()
-  runner.run_now(babyMonitor, only_last_minute=True)
+  runner.run_now(babyMonitor)
