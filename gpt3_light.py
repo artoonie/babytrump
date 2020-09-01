@@ -62,8 +62,21 @@ class SingleRandomSubstitutionBaseConverter(Converter):
     self.toPatternUsed = self.get_rand_to_pattern()
     return re.sub(self.fromPattern, self.toPatternUsed, tweet, count=1)
 
+class ElmerFuddLight(ManySubstitutionsBaseConverter):
+  # Only touch r and l start and end of words, no double letters
+  substitutions = ((r'\b[rl](?<![rl])', r'w'),
+                   (r'(?<![rl])[rl]\b', r'w'),
+                   (r'qu', r'qw'),
+                   (r'th\b', r'f'),
+                   (r'th', r'd'),
+                   (r'erl', r'ahl'))
+
+  @property
+  def dont_touch_users_or_tags(self):
+    return True
+
 class ElmerFudd(ManySubstitutionsBaseConverter):
-  substitutions = ((r'[rl]', r'w'),
+  substitutions = ((r'(?<![wW])[rl](?![rlw]?$)', r'w'), # no double-letter subs at end of word
                    (r'qu', r'qw'),
                    (r'th\b', r'f'),
                    (r'th', r'd'))
@@ -71,6 +84,10 @@ class ElmerFudd(ManySubstitutionsBaseConverter):
   @property
   def dont_touch_users_or_tags(self):
     return True
+
+class WordEndings(ManySubstitutionsBaseConverter):
+  substitutions = ((r'ers(?=[!. ?]|\b)', r'ahs'),
+                   (r'er(?=[!. ?]|\b)', r'ah'))
 
 class JoeBiden(SingleRandomSubstitutionBaseConverter):
   fromPattern = r'Joe Biden'
@@ -123,6 +140,12 @@ class LawOrder(SingleRandomSubstitutionBaseConverter):
                 r'I LIKE POLICE RACISM',
                 r'BLACK PPL SHUD JUST GET OVER IT')
 
+class InnerCity(SingleRandomSubstitutionBaseConverter):
+  fromPattern = r'[iI]nner [cC]ity'
+  toPatterns = (r'black parts of the city',
+                r'shithole neighborhoods',
+                r'poor people homeses')
+
 class Mommy(SingleRandomSubstitutionBaseConverter):
   fromPattern = r'([ ]*)([^.!?]*)\?'
   toPatterns = (r'\1Mommy, \2?',
@@ -141,41 +164,65 @@ class Mommy(SingleRandomSubstitutionBaseConverter):
       tweet = tweet[:i-1] + tweet[i-1].lower() + tweet[i:]
     return tweet
 
+class WordSubs(ManySubstitutionsBaseConverter):
+  substitutions = ((r'\breally\b', r'rilly'),
+                   (r'\bwill\b', r'will'),
+                   (r'\bthe\b', r'da'),
+                   (r'[cC]ongress\b', r'Congriss'))
+
 class Infanticizer():
   def __init__(self):
     self.processorGroups = (
       # First group (will do as many in group as it can)
-      (
-        JoeBiden(),
-        SleepyJoe(),
-        Mommy(),
-        FoxNews(),
-        FoxNewsAt(),
-        Antifa(),
-        LawOrder(),
-        Democrats()
-      ),
+      {
+        'try': (
+          JoeBiden(),
+          SleepyJoe(),
+          Mommy(),
+          FoxNews(),
+          FoxNewsAt(),
+          Antifa(),
+          LawOrder(),
+          InnerCity(),
+          Democrats()
+       ),
+       'finally': (
+          WordSubs(),
+          WordEndings(),
+          ElmerFuddLight(),
+       )
+      },
       # Second group (only if nothing succeeded in first group)
-      (
-        ElmerFudd(),
-      ),
+      {
+        'try': (
+          WordSubs(),
+          WordEndings(),
+          ElmerFuddLight(),
+          ElmerFudd(),
+        ),
+        'finally': ()
+      }
     )
 
   def is_tweet_valid(self, tweet):
-    if len(tweet) <= 280:
-      return True
+    return len(tweet) <= 280
 
-  def tryToProcessTweetWithEverythingInGroup(self, tweet, group):
+  def run_processors_on_tweet(self, tweet, processors):
+    """ Run each processor on the tweet, if valid """
     didProcess = False
-    for processor in group:
+    for processor in processors:
       if not processor.can_do(tweet):
         continue
       potentialTweet = processor.do(tweet)
       if self.is_tweet_valid(potentialTweet):
         tweet = potentialTweet
         didProcess = True
+    return (tweet, didProcess)
 
+  def tryToProcessTweetWithEverythingInGroup(self, tweet, group):
+    (tweet, didProcess) = self.run_processors_on_tweet(tweet, group['try'])
     if didProcess:
+      (tweet, _) = self.run_processors_on_tweet(tweet, group['finally'])
       return tweet
 
     return None
