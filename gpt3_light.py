@@ -12,19 +12,39 @@ class Converter(abc.ABC):
   def get_rand_to_pattern(self):
     return random.choice(self.toPatterns)
 
+  @classmethod
+  def run_on_modifiable_tokens(self, tweet, func):
+    """ Run func on each non-@user, non-@tag token. Not very smart yet. """
+    newtweetTokens = []
+    for token in tweet.split():
+      if token.startswith('#') or token.startswith('@'):
+        newtweetTokens.append(token)
+      else:
+        newtweetTokens.append(func(token))
+    return ' '.join(newtweetTokens)
 
 class ManySubstitutionsBaseConverter(Converter):
   @property
   def substitutions(self):
     raise NotImplementedError
 
+  @property
+  def dont_touch_users_or_tags(self):
+    return False
+
   def can_do(self, tweet):
     return any([re.search(sub[0], tweet) for sub in self.substitutions])
 
-  def do(self, tweet):
+  def _do_on_token(self, token):
     for fromPattern, toPattern in self.substitutions:
-      tweet = re.sub(fromPattern, toPattern, tweet)
-    return tweet
+      token = re.sub(fromPattern, toPattern, token)
+    return token
+
+  def do(self, tweet):
+    if not self.dont_touch_users_or_tags:
+      return self._do_on_token(tweet)
+    else:
+      return self.run_on_modifiable_tokens(tweet, self._do_on_token)
 
 class SingleRandomSubstitutionBaseConverter(Converter):
   @property
@@ -48,6 +68,10 @@ class ElmerFudd(ManySubstitutionsBaseConverter):
                    (r'th\b', r'f'),
                    (r'th', r'd'))
 
+  @property
+  def dont_touch_users_or_tags(self):
+    return True
+
 class JoeBiden(SingleRandomSubstitutionBaseConverter):
   fromPattern = r'Joe Biden'
   toPatterns = (r'Joey ByeBye',
@@ -61,6 +85,43 @@ class SleepyJoe(SingleRandomSubstitutionBaseConverter):
                 r'Bedtime Buddy Joey',
                 r'Pajama Party Joe',
                 r'Meanie Joe')
+
+class FoxNews(SingleRandomSubstitutionBaseConverter):
+  fromPattern = r'@FoxNews'
+  toPatterns = (r'@PornHub',
+                r'@FucksNews',
+                r'Fake News @FoxNews')
+
+class FoxNewsAt(SingleRandomSubstitutionBaseConverter):
+  fromPattern = r'@FoxNews'
+  toPatterns = (r'@PornHub',
+                r'@FucksNews',
+                r'Fake News @FoxNews',
+                r'Failing @FoxNews')
+
+class FoxNews(SingleRandomSubstitutionBaseConverter):
+  fromPattern = r'Fox News'
+  toPatterns = (r'Big Bullies News',
+                r'Fucks News',
+                r'Guilt-Free Racism Channel')
+
+class Antifa(SingleRandomSubstitutionBaseConverter):
+  fromPattern = r'Antifa'
+  toPatterns = (r'Meanies who voted 4 hillry',
+                r'Nazi-haters',
+                r'Buttface Libs')
+
+class Democrats(SingleRandomSubstitutionBaseConverter):
+  fromPattern = r'Democrats'
+  toPatterns = (r'Ppl who dont like me',
+                r'Buggerbutt Dems',
+                r'Demotwats')
+
+class LawOrder(SingleRandomSubstitutionBaseConverter):
+  fromPattern = r'LAW & ORDER'
+  toPatterns = (r'I JUST FARTED',
+                r'I LIKE POLICE RACISM',
+                r'BLACK PPL SHUD JUST GET OVER IT')
 
 class Mommy(SingleRandomSubstitutionBaseConverter):
   fromPattern = r'([ ]*)([^.!?]*)\?'
@@ -83,13 +144,18 @@ class Mommy(SingleRandomSubstitutionBaseConverter):
 class Infanticizer():
   def __init__(self):
     self.processorGroups = (
-      # First group:
+      # First group (will do as many in group as it can)
       (
         JoeBiden(),
         SleepyJoe(),
         Mommy(),
+        FoxNews(),
+        FoxNewsAt(),
+        Antifa(),
+        LawOrder(),
+        Democrats()
       ),
-      # Second group:
+      # Second group (only if nothing succeeded in first group)
       (
         ElmerFudd(),
       ),
