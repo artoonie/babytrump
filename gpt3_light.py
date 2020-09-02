@@ -149,11 +149,11 @@ class InnerCity(SingleRandomSubstitutionBaseConverter):
                 r'poor people homeses')
 
 class Mommy(SingleRandomSubstitutionBaseConverter):
-  fromPattern = r'([ ]*)([^.!?]*)\?'
-  toPatterns = (r'\1Mommy, \2?',
-                r'\1Momma, \2?',
-                r'\1Momsie, \2?',
-                r'\1Momsicle, \2?')
+  fromPattern = r'([ ]*)([^.!?]*)([!?]*\?[!?]*)'
+  toPatterns = (r'\1Mommy, \2\3',
+                r'\1Momma, \2\3',
+                r'\1Momsie, \2\3',
+                r'\1Momsicle, \2\3')
 
   def do(self, tweet):
     tweet = super(Mommy, self).do(tweet)

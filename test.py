@@ -132,6 +132,18 @@ def test_mommy():
     'Why is Biden better than me?',
     'Momsicle, why is Biden better than me?')
 
+  assert_converts(gpt3.Mommy(),
+    'Can you believe what\'s happening?!',
+    'Momsicle, can you believe what\'s happening?!')
+
+  assert_converts(gpt3.Mommy(),
+    'Can you believe what\'s happening!?',
+    'Momsicle, can you believe what\'s happening!?')
+
+  assert_converts(gpt3.Mommy(),
+    'Can you believe what\'s happening!??!?!!!',
+    'Momsicle, can you believe what\'s happening!??!?!!!')
+
   assert_converts(gpt3.JoeBiden(),
     'Why is Biden better than me!',
     None)
