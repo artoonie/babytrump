@@ -171,7 +171,8 @@ class WordSubs(ManySubstitutionsBaseConverter):
                    (r'\bwill\b', r'will'),
                    (r'\bthe\b', r'da'),
                    (r'[cC]ongress\b', r'Congriss'),
-                   (r'kind of\b', r'kinda'))
+                   (r'kind of\b', r'kinda'),
+                   (r'Joe Hiden\b', r'Waldo Joe'))
 
 class Infanticizer():
   def __init__(self):
