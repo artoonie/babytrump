@@ -35,7 +35,6 @@ class TwitterBabyMonitor():
       # Ensure the sender and receiver were both from bb
       assert recipient == sender
 
-      # Store it!
       return int(text)
     except Exception as e:
       print("Failed to read last seen tweet ID")
