@@ -73,6 +73,11 @@ def test_elmer_fudd():
     'hello http://hello/',
     'hewwo http://hello/')
 
+  # Check exclusions
+  assert_converts(gpt3.ElmerFudd(),
+    'loses',
+    'loses') # Note - canDo() will be true, but nothing should change
+
   # This isn't handled yet - should be polls? but doesn't work with the '?' at end
   assert_converts(gpt3.ElmerFudd(),
     'polls?',

@@ -12,12 +12,17 @@ class Converter(abc.ABC):
   def get_rand_to_pattern(self):
     return random.choice(self.toPatterns)
 
+  # Would be nice to do this generally, but much easier this way
+  ignoreTokens = ('lose', 'loses',)
+
   @classmethod
   def run_on_modifiable_tokens(self, tweet, func):
     """ Run func on each non-@user, non-@tag, non-URL token. Not very smart yet. """
     newtweetTokens = []
     for token in tweet.split():
       if token.startswith('#') or token.startswith('@') or token.startswith('http'):
+        newtweetTokens.append(token)
+      elif token in self.ignoreTokens:
         newtweetTokens.append(token)
       else:
         newtweetTokens.append(func(token))
@@ -33,6 +38,7 @@ class ManySubstitutionsBaseConverter(Converter):
     return False
 
   def can_do(self, tweet):
+    # Not entirely accurate - doesn't check exclusion lists or parse into tokens
     return any([re.search(sub[0], tweet) for sub in self.substitutions])
 
   def _do_on_token(self, token):
@@ -71,9 +77,7 @@ class ElmerFuddLight(ManySubstitutionsBaseConverter):
                    (r'th', r'd'),
                    (r'erl', r'ahl'))
 
-  @property
-  def dont_touch_users_or_tags(self):
-    return True
+  dont_touch_users_or_tags = True
 
 class ElmerFudd(ManySubstitutionsBaseConverter):
   substitutions = ((r'(?<![wW])[rl](?![rlw]?$)', r'w'), # no double-letter subs at end of word
@@ -81,9 +85,7 @@ class ElmerFudd(ManySubstitutionsBaseConverter):
                    (r'th\b', r'f'),
                    (r'th', r'd'))
 
-  @property
-  def dont_touch_users_or_tags(self):
-    return True
+  dont_touch_users_or_tags = True
 
 class WordEndings(ManySubstitutionsBaseConverter):
   substitutions = ((r'ers(?=[!. ?]|\b)', r'ahs'),
@@ -168,7 +170,8 @@ class WordSubs(ManySubstitutionsBaseConverter):
   substitutions = ((r'\breally\b', r'rilly'),
                    (r'\bwill\b', r'will'),
                    (r'\bthe\b', r'da'),
-                   (r'[cC]ongress\b', r'Congriss'))
+                   (r'[cC]ongress\b', r'Congriss'),
+                   (r'kind of\b', r'kinda'))
 
 class Infanticizer():
   def __init__(self):
