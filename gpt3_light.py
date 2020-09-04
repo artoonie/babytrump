@@ -107,8 +107,7 @@ class SleepyJoe(SingleRandomSubstitutionBaseConverter):
 
 class FoxNews(SingleRandomSubstitutionBaseConverter):
   fromPattern = r'@FoxNews'
-  toPatterns = (r'@PornHub',
-                r'@FucksNews',
+  toPatterns = (r'@FucksNews',
                 r'Fake News @FoxNews')
 
 class FoxNewsAt(SingleRandomSubstitutionBaseConverter):
