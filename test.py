@@ -10,23 +10,47 @@ def assert_converts(converter, fromText, toText=None):
   else:
     random.seed(0)
     assert converter.can_do(fromText)
-    assert converter.do(fromText) == toText
+    assert converter.do(fromText, []) == toText
 
 def test_elmer_fudd_light():
+
   assert_converts(gpt3.ElmerFuddLight(),
     'Hello can I quit playing with the ball',
-    'Hello can I qwit playing wif de ball')
+    'Hello can I qwit pwaying wif de ball')
 
+  # Yes single letters
   assert_converts(gpt3.ElmerFuddLight(),
-    'poll',
+    'Trump',
+    'Twump')
+
+  # Only last letter of multiple-l/r words
+  assert_converts(gpt3.ElmerFuddLight(),
+    'Truly Atalaralalarala Exceptional',
+    'Truwy Atalaralalarawa Exceptional')
+
+  # No double letters
+  assert_converts(gpt3.ElmerFuddLight(),
+    'pollo',
     None)
 
+  # No triple letters?
   assert_converts(gpt3.ElmerFuddLight(),
-    'pol',
-    'pow')
+    'allllllllllllllllla',
+    None)
 
+  # No l at end of word if next letter is w
   assert_converts(gpt3.ElmerFuddLight(),
     'polw',
+    None)
+
+  # No r at end of word
+  assert_converts(gpt3.ElmerFuddLight(),
+    'year',
+    None)
+
+  # No l at end of word
+  assert_converts(gpt3.ElmerFuddLight(),
+    'pol',
     None)
 
 def test_elmer_fudd():
@@ -168,12 +192,12 @@ def test_all():
      'Kimberly Klacik is really working hard to help the people of Baltimore. Joe Biden!!!!' # group 1
      ]
   expected_results =\
-    ['Momsicle, when is Slow Jerk Biden going to criticize da Anarchists, Thugs & Agitators in ANTIFA? When is he going to suggest bringing up da Nationaw Guard in BADLY RUN & Crime Infested Democrat Cities & States? Remembah, he can’t lose da Crazy Bernie Supah Liberaw vote!',
-     'Joe Biden is coming out of da basement eawwiah dan his hoped fow ten days because his peopwe towd him he has no choice, his poll numbahs awe PLUNGING! Going to Pittsbuwgh, whewe I have hewped industwy to a wecowd wast yeaw, & den back to his basement fow an extended pewiod...',
-     'Jerk Biden is coming out of da basement earliah dan his hoped fow ten days because his people told him he has no choice, his poll numbahs are PLUNGING! Going to Pittsburgh, where I have helped industry to a record last yeaw',
+    ['Momsicle, when is Slow Jerk Biden going to cwiticize da Anawchists, Thugs & Agitatows in ANTIFA? When is he going to suggest bwinging up da National Guawd in BADLY RUN & Cwime Infested Democwat Cities & States? Remembah, he can’t lose da Cwazy Bewnie Supah Libewal vote!',
+     'Joe Biden is coming out of da basement eawwiah dan his hoped for ten days because his people towd him he has no choice, his poll numbahs awe PLUNGING! Going to Pittsbuwgh, where I have hewped industwy to a wecowd wast yeaw, & den back to his basement for an extended pewiod...',
+     'Jerk Biden is coming out of da basement earliah dan his hoped for ten days because his people towd him he has no choice, his poll numbahs awe PLUNGING! Going to Pittsbuwgh, where I have hewped industwy to a recowd last year',
      'I LIKE POLICE RACISM!!!',
-     'Kimbahwy Kwacik is wiwwy wowking hawd to hewp da peopwe of Bawtimowe. She is wunning fow Congwiss as a Repubwican, & if she wins she will be an inspiwation to aww. She is stwong on innah city webuiwding, heawdcawe, ouw Miwitawy & Vets. She has my Compwete & Totaw Endowsement!',
-     'Kimbahly Klacik is rilly working hard to help da people of Baltimore. Jerk Biden!!!!'
+     'Kimbahwy Kwacik is rilly wowking hawd to help da people of Bawtimowe. She is wunning for Congriss as a Repubwican, & if she wins she will be an inspiwation to aww. She is stwong on innah city webuiwding, heawdcawe, our Miwitawy & Vets. She has my Compwete & Total Endowsement!',
+     'Kimbahly Kwacik is rilly wowking hawd to help da people of Baltimowe. Jerk Biden!!!!'
      ]
 
   infanticizer = gpt3.Infanticizer()

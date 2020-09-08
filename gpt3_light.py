@@ -7,28 +7,39 @@ class Converter(abc.ABC):
   def can_do(self, tweet): pass
 
   @abc.abstractmethod
-  def do(self, tweet): pass
+  def do(self, tweet, tokensToNotTouch = []): pass
 
   def get_rand_to_pattern(self):
     return random.choice(self.toPatterns)
 
-  # Would be nice to do this generally, but much easier this way
-  ignoreTokens = ('lose', 'loses',)
-
   @classmethod
-  def run_on_modifiable_tokens(self, tweet, func):
+  def _split_list_of_strings_then_join(self, listOfStrings):
+    return [token for string in listOfStrings for token in string.split()]
+
+  def run_on_modifiable_tokens(self, tweet, tokensToNotTouch, func):
     """ Run func on each non-@user, non-@tag, non-URL token. Not very smart yet. """
+    # Convert e.g. ['Momsicle, ', 'Mommy, '] into ['momsicle', ',', 'mommy', ',']
+    tokensToNotTouch = self._split_list_of_strings_then_join(tokensToNotTouch)
+    tokensToNotTouch.extend(self._split_list_of_strings_then_join(self.alwaysIgnoreTokens))
+    tokensToNotTouch = [t.lower() for t in tokensToNotTouch]
+
     newtweetTokens = []
     for token in tweet.split():
       if token.startswith('#') or token.startswith('@') or token.startswith('http'):
         newtweetTokens.append(token)
-      elif token in self.ignoreTokens:
+      elif token.lower() in tokensToNotTouch:
         newtweetTokens.append(token)
       else:
         newtweetTokens.append(func(token))
     return ' '.join(newtweetTokens)
 
+  alwaysIgnoreTokens = ('lose', 'loses', 'slow', 'people', 'where', 'help',)
+
 class ManySubstitutionsBaseConverter(Converter):
+  def additionalIgnoreTokens(self):
+    # To patterns without \1 \2 etc
+    return [re.sub(r'\\\d', '', s[1]) for s in self.substitutions]
+
   @property
   def substitutions(self):
     raise NotImplementedError
@@ -46,13 +57,17 @@ class ManySubstitutionsBaseConverter(Converter):
       token = re.sub(fromPattern, toPattern, token)
     return token
 
-  def do(self, tweet):
+  def do(self, tweet, tokensToNotTouch):
     if not self.dont_touch_users_or_tags:
       return self._do_on_token(tweet)
     else:
-      return self.run_on_modifiable_tokens(tweet, self._do_on_token)
+      return self.run_on_modifiable_tokens(tweet, tokensToNotTouch, self._do_on_token)
 
 class SingleRandomSubstitutionBaseConverter(Converter):
+  def additionalIgnoreTokens(self):
+    # To patterns without \1 \2 etc
+    return [re.sub(r'\\\d', '', s) for s in self.toPatterns]
+
   @property
   def fromPattern(self):
     raise NotImplementedError
@@ -64,14 +79,14 @@ class SingleRandomSubstitutionBaseConverter(Converter):
   def can_do(self, tweet):
     return re.search(self.fromPattern, tweet) is not None
 
-  def do(self, tweet):
+  def do(self, tweet, tokensToNotTouch):
+    if tweet in tokensToNotTouch:
+      return tweet
     self.toPatternUsed = self.get_rand_to_pattern()
     return re.sub(self.fromPattern, self.toPatternUsed, tweet, count=1)
 
 class ElmerFuddLight(ManySubstitutionsBaseConverter):
-  # Only touch r and l start and end of words, no double letters
-  substitutions = ((r'\b[rl](?<![rl])', r'w'),
-                   (r'(?<![rl])[rl]\b', r'w'),
+  substitutions = ((r'^(.*[^rlw]+)[rl]([^rlw]+.*)$', r'\1w\2'), # rl to w, only in middle of word, except double letters
                    (r'qu', r'qw'),
                    (r'th\b', r'f'),
                    (r'th', r'd'),
@@ -88,8 +103,8 @@ class ElmerFudd(ManySubstitutionsBaseConverter):
   dont_touch_users_or_tags = True
 
 class WordEndings(ManySubstitutionsBaseConverter):
-  substitutions = ((r'ers(?=[!. ?]|\b)', r'ahs'),
-                   (r'er(?=[!. ?]|\b)', r'ah'))
+  substitutions = ((r'ers(?=[!. ?]|\b)', r'ahs'), # fuckers to fuckahs
+                   (r'er(?=[!. ?]|\b)', r'ah')) # fucker to fuckah
 
 class JoeBiden(SingleRandomSubstitutionBaseConverter):
   fromPattern = r'Joe Biden'
@@ -154,8 +169,8 @@ class Mommy(SingleRandomSubstitutionBaseConverter):
                 r'\1Momsie, \2\3',
                 r'\1Momsicle, \2\3')
 
-  def do(self, tweet):
-    tweet = super(Mommy, self).do(tweet)
+  def do(self, tweet, tokensToNotTouch):
+    tweet = super(Mommy, self).do(tweet, tokensToNotTouch)
     toPattern = self.toPatternUsed
 
     # Lowercase the first character of the next sentence
@@ -210,23 +225,26 @@ class Infanticizer():
   def is_tweet_valid(self, tweet):
     return len(tweet) <= 280
 
-  def run_processors_on_tweet(self, tweet, processors):
+  def run_processors_on_tweet(self, tweet, tokensToNotTouch, processors):
     """ Run each processor on the tweet, if valid """
     didProcess = False
     for processor in processors:
       if not processor.can_do(tweet):
         continue
-      potentialTweet = processor.do(tweet)
+      potentialTweet = processor.do(tweet, tokensToNotTouch)
       if self.is_tweet_valid(potentialTweet):
         tweet = potentialTweet
         didProcess = True
-    return (tweet, didProcess)
+        tokensToNotTouch.extend(processor.additionalIgnoreTokens())
+    return {'tweet': tweet,
+            'tokensToNotTouch': tokensToNotTouch,
+            'didProcess': didProcess}
 
   def tryToProcessTweetWithEverythingInGroup(self, tweet, group):
-    (tweet, didProcess) = self.run_processors_on_tweet(tweet, group['try'])
-    if didProcess:
-      (tweet, _) = self.run_processors_on_tweet(tweet, group['finally'])
-      return tweet
+    result = self.run_processors_on_tweet(tweet, [], group['try'])
+    if result['didProcess']:
+      result2 = self.run_processors_on_tweet(result['tweet'], result['tokensToNotTouch'], group['finally'])
+      return result2['tweet']
 
     return None
 
