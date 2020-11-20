@@ -48,13 +48,13 @@ class TwitterBabyMonitor():
     if statuses:
       print(statuses)
       self._store_last_seen_id(statuses[0].id)
-    statuses = [html.unescape(s.full_text) for s in statuses]
+    statuses = [(html.unescape(s.full_text), s.id) for s in statuses]
     return statuses
 
-  def tweet(self, tweet):
+  def tweet(self, tweet, replyto):
     try:
-        status = self.api.PostUpdate(tweet)
-        print("Sent tweet:", tweet)
+        status = self.api.PostUpdate(tweet, in_reply_to_status_id=replyto, auto_populate_reply_metadata=True)
+        print("Sent tweet:", tweet, "in response to", replyto, "status: ", status)
     except UnicodeDecodeError:
         print("Your message could not be encoded.  Perhaps it contains non-ASCII characters? ")
         raise

@@ -8,14 +8,14 @@ def run_now(baby_monitor):
   infanticizer = gpt3.Infanticizer()
 
   statuses = baby_monitor.read_stream()
-  for s in statuses:
+  for text, replyto_id in statuses:
     print()
-    tweet = infanticizer.process(s)
+    tweet = infanticizer.process(text)
     if not tweet:
-      print("No valid tweet, skipping ", s)
+      print("No valid tweet, skipping ", text)
       continue
 
-    baby_monitor.tweet(tweet)
+    baby_monitor.tweet(tweet, replyto_id)
   print('.',)
 
 def run_continuously():
